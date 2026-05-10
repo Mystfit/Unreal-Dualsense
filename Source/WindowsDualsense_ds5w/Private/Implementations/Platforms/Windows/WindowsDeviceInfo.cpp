@@ -104,8 +104,11 @@ void FWindowsDeviceInfo::Detect(std::vector<FDeviceContext>& Devices)
 						{
 							Context.IsConnected = true;
 							Context.ConnectionType = EDSDeviceConnection::Usb;
-							std::string BluetoothGUID = "{00001124-0000-1000-8000-00805f9b34fb}";
-							if (Context.Path.find(BluetoothGUID) != std::string::npos)
+							// Match both BT-Classic HID (0x1124) and BLE HID-over-GATT (0x1812).
+							const std::string BluetoothClassicHIDGUID = "{00001124-0000-1000-8000-00805f9b34fb}";
+							const std::string BluetoothLowEnergyHIDGUID = "{00001812-0000-1000-8000-00805f9b34fb}";
+							if (Context.Path.find(BluetoothClassicHIDGUID) != std::string::npos ||
+							    Context.Path.find(BluetoothLowEnergyHIDGUID) != std::string::npos)
 							{
 								Context.ConnectionType = EDSDeviceConnection::Bluetooth;
 							}
@@ -171,7 +174,8 @@ void FWindowsDeviceInfo::Read(FDeviceContext* Context)
 
 void FWindowsDeviceInfo::Write(FDeviceContext* Context)
 {
-	if (Context->Handle == INVALID_HANDLE_VALUE)
+	// InvalidateHandle sets Handle to INVALID_PLATFORM_HANDLE (nullptr); guard both forms.
+	if (Context->Handle == INVALID_HANDLE_VALUE || Context->Handle == nullptr)
 	{
 		return;
 	}
