@@ -174,8 +174,7 @@ void FWindowsDeviceInfo::Read(FDeviceContext* Context)
 
 void FWindowsDeviceInfo::Write(FDeviceContext* Context)
 {
-	// InvalidateHandle sets Handle to INVALID_PLATFORM_HANDLE (nullptr); guard both forms.
-	if (Context->Handle == INVALID_HANDLE_VALUE || Context->Handle == nullptr)
+	if (Context->Handle == INVALID_HANDLE_VALUE)
 	{
 		return;
 	}
@@ -198,9 +197,9 @@ bool FWindowsDeviceInfo::CreateHandle(FDeviceContext* DeviceContext)
 	    MyStdString.data(),
 	    GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, NULL, nullptr);
 
-	if (DeviceHandle == INVALID_PLATFORM_HANDLE)
+	if (DeviceHandle == INVALID_HANDLE_VALUE)
 	{
-		DeviceContext->Handle = DeviceHandle;
+		DeviceContext->Handle = INVALID_PLATFORM_HANDLE;
 		return false;
 	}
 
