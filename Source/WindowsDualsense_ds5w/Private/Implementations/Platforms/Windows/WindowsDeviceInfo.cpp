@@ -174,7 +174,7 @@ void FWindowsDeviceInfo::Read(FDeviceContext* Context)
 
 void FWindowsDeviceInfo::Write(FDeviceContext* Context)
 {
-	if (Context->Handle == INVALID_HANDLE_VALUE)
+	if (Context->Handle == INVALID_PLATFORM_HANDLE)
 	{
 		return;
 	}

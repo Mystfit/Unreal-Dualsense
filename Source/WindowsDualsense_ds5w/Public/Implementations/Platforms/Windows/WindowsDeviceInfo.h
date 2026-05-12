@@ -104,7 +104,7 @@ public:
 	 * @brief Invalidates the handle of the specified HID device context and updates its connection status.
 	 *
 	 * This method ensures that the handle associated with the provided device context is properly invalidated.
-	 * If the handle is valid, it will be closed and set to INVALID_HANDLE_VALUE. The connection status of the
+	 * If the handle is valid, it will be closed and set to INVALID_PLATFORM_HANDLE. The connection status of the
 	 * device context will also be updated to indicate that the device is no longer connected.
 	 *
 	 * @param Context Pointer to the device context representing the HID device whose handle is to be invalidated.
