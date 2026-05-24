@@ -1,6 +1,6 @@
-﻿// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto/Publisher. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 
 #pragma once
 
@@ -409,7 +409,7 @@ public:
 	    EControllerHand Hand);
 
 	/**
-	 * Novo efeito Machine avançado (opcode 0x27).
+	 * Novo efeito Machine avan�ado (opcode 0x27).
 	 * Estrutura: [27] [Start_Zone] [Behavior_Flag] [Force_Amplitude] [Period] [Frequency]
 	 * Start_Zone: ETriggerPosition -> mapeado para 0x82, 0x84, 0x80, 0x88
 	 * Behavior_Flag: Localized=1 (EndAtPos), Sustained=2 (KeepEffect)

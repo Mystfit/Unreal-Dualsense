@@ -1,11 +1,10 @@
-// Copyright (c) 2025 Rafael Valoto. All Rights Reserved.
-// Project: GamepadCore
-// Description: Cross-platform library for DualSense and generic gamepad input support.
-// Targets: Windows, Linux, macOS.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
+// Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
+// Planned Release Year: 2026
 #pragma once
 #include "GCore/Templates/TGenericHardwareInfo.h"
 #include "GCore/Types/Structs/Context/DeviceContext.h"
-#include "Implementations/Platforms/Commons/CommonsDeviceInfo.h"
+#include "Implementations/Platforms/Linux/LinuxDeviceInfo.h"
 
 // Sample Linux hardware policy adapter template
 //
@@ -13,7 +12,7 @@
 // `GamepadCore::TGenericHardwareInfo`. Replace the bodies with calls to your
 // concrete Linux implementation in
 // `Source/Private/Implementations/Platforms/Commons/CommonsDeviceInfo.cpp`
-// (e.g., forward to your FCommonsDeviceInfo logic that uses SDL HID).
+// (e.g., forward to your FLinuxDeviceInfo logic that uses SDL HID).
 namespace FLinuxPlatform
 {
 	struct FLinuxHardwarePolicy;
@@ -25,37 +24,37 @@ namespace FLinuxPlatform
 
 		void Read(FDeviceContext* Context)
 		{
-			FCommonsDeviceInfo::Read(Context);
+			FLinuxDeviceInfo::Read(Context);
 		}
 
 		void Write(FDeviceContext* Context)
 		{
-			FCommonsDeviceInfo::Write(Context);
+			FLinuxDeviceInfo::Write(Context);
 		}
 
 		void Detect(std::vector<FDeviceContext>& Devices)
 		{
-			FCommonsDeviceInfo::Detect(Devices);
+			FLinuxDeviceInfo::Detect(Devices);
 		}
 
 		bool CreateHandle(FDeviceContext* Context)
 		{
-			return FCommonsDeviceInfo::CreateHandle(Context);
+			return FLinuxDeviceInfo::CreateHandle(Context);
 		}
 
 		void InvalidateHandle(FDeviceContext* Context)
 		{
-			FCommonsDeviceInfo::InvalidateHandle(Context);
+			FLinuxDeviceInfo::InvalidateHandle(Context);
 		}
 
 		void ProcessAudioHaptic(FDeviceContext* Context)
 		{
-			FCommonsDeviceInfo::ProcessAudioHaptic(Context);
+			FLinuxDeviceInfo::ProcessAudioHaptic(Context);
 		}
 
 		void InitializeAudioDevice(FDeviceContext* Context)
 		{
-			FCommonsDeviceInfo::InitializeAudioDevice(Context);
+			FLinuxDeviceInfo::InitializeAudioDevice(Context);
 		}
 	};
 } // namespace FLinuxPlatform

@@ -1,6 +1,6 @@
-﻿// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 
 #pragma once
 
@@ -11,8 +11,8 @@
 #if PLATFORM_LINUX || PLATFORM_MAC
 #include "Framework/Application/SlateApplication.h"
 #endif
-using namespace GCDevice;
 
+using namespace GCDevice;
 /**
  * The FWindowsDualsense_ds5wModule class represents a module for handling DualSense input devices
  * on the Windows platform. It integrates with the Unreal Engine input device system, allowing
@@ -75,7 +75,6 @@ private:
 	 * DeviceInstance is used to handle and control the lifecycle of the DualSense input device
 	 * on the Windows platform, ensuring proper resource management and functionality.
 	 */
-private:
 	TSharedPtr<DeviceManager> DeviceInstance;
 	/**
 	 * Registers a set of custom input keys for PlayStation-specific controls.

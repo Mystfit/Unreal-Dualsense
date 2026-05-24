@@ -1,11 +1,11 @@
-// Copyright (c) 2025 Rafael Valoto. All Rights Reserved.
-// Project: GamepadCore
-// Description: Cross-platform library for DualSense and generic gamepad input support.
-// Targets: Windows, Linux, macOS.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
+// Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
+// Planned Release Year: 2026
 #pragma once
 #include "GCore/Templates/TGenericHardwareInfo.h"
-#include "WindowsDeviceInfo.h"
+
 #ifdef _WIN32
+#include "Implementations/Platforms/Windows/WindowsDeviceInfo.h"
 namespace FWindowsPlatform
 {
 	struct FWindowsHardwarePolicy;
@@ -42,20 +42,6 @@ namespace FWindowsPlatform
 		void ProcessAudioHaptic(FDeviceContext* Context)
 		{
 			FWindowsDeviceInfo::ProcessAudioHaptic(Context);
-		}
-
-		/**
-		 * @brief Initializes the audio device for a DualSense controller.
-		 *
-		 * Enumerates available audio playback devices, searches for one matching
-		 * the DualSense controller (by name containing "DualSense" or "Wireless Controller"),
-		 * and initializes the FAudioDeviceContext with the found device.
-		 *
-		 * @param Context The device context to store the audio device in
-		 */
-		void InitializeAudioDevice(FDeviceContext* Context)
-		{
-			FWindowsDeviceInfo::InitializeAudioDevice(Context);
 		}
 	};
 } // namespace FWindowsPlatform

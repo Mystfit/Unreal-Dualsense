@@ -1,6 +1,6 @@
-// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 
 #include "API/SonyGamepadTouchProxy.h"
 #include "API/SonyGamepadProxyHelpers.h"
@@ -9,22 +9,28 @@
 using namespace SonyGamepadProxyHelpers;
 void USonyGamepadTouchProxy::EnableTouch(int32 ControllerId, bool bEnableTouch)
 {
-	if (IGamepadBase* Gamepad = GetGamepad(ControllerId))
+	IGamepadBase* Gamepad = GetGamepad(ControllerId);
+	if (!Gamepad)
 	{
-		if (auto* Touch = Gamepad->GetIGamepadTouch())
-		{
-			Touch->EnableTouch(bEnableTouch);
-		}
+		return;
+	}
+
+	if (auto* Touch = Gamepad->GetIGamepadTouch())
+	{
+		Touch->EnableTouch(bEnableTouch);
 	}
 }
 
 void USonyGamepadTouchProxy::EnableGesture(int32 ControllerId, bool bEnableGesture)
 {
-	if (IGamepadBase* Gamepad = GetGamepad(ControllerId))
+	IGamepadBase* Gamepad = GetGamepad(ControllerId);
+	if (!Gamepad)
 	{
-		if (auto* Touch = Gamepad->GetIGamepadTouch())
-		{
-			Touch->EnableGesture(bEnableGesture);
-		}
+		return;
+	}
+
+	if (auto* Touch = Gamepad->GetIGamepadTouch())
+	{
+		Touch->EnableGesture(bEnableGesture);
 	}
 }

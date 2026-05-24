@@ -1,13 +1,11 @@
-// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 
 #pragma once
 
-#include "API/Types/Enums/EDeviceCommons.h"
 #include "API/Types/Enums/EDeviceConnection.h"
 #include "CoreMinimal.h"
-#include "Types/DualSenseFeatureReport.h"
 #include "UObject/Object.h"
 #include "SonyGamepadBaseProxy.generated.h"
 

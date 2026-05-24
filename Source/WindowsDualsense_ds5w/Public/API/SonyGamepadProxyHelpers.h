@@ -1,6 +1,6 @@
-// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 
 #pragma once
 
@@ -25,9 +25,6 @@ static_assert(static_cast<uint8>(EDeviceConnection::Unrecognized) == static_cast
 static_assert(static_cast<uint8>(EGamepadHand::Left) == static_cast<uint8>(EDSGamepadHand::Left), "Enum mismatch: GamepadHand Left value differs between Core and API!");
 static_assert(static_cast<uint8>(EGamepadHand::Right) == static_cast<uint8>(EDSGamepadHand::Right), "Enum mismatch: GamepadHand Right value differs between Core and API!");
 static_assert(static_cast<uint8>(EGamepadHand::AnyHand) == static_cast<uint8>(EDSGamepadHand::AnyHand), "Enum mismatch: GamepadHand AnyHand value differs between Core and API!");
-
-static_assert(static_cast<uint8>(EDualSenseAudioFeatureReport::On) == static_cast<uint8>(EDSAudioMode::On), "Enum mismatch: AudioFeature On value differs between Core and API!");
-static_assert(static_cast<uint8>(EDualSenseAudioFeatureReport::Off) == static_cast<uint8>(EDSAudioMode::Off), "Enum mismatch: AudioFeature Off value differs between Core and API!");
 
 static_assert(static_cast<uint8>(ELedPlayerEnum::Off) == static_cast<uint8>(EDSPlayer::Off), "Enum mismatch: LedPlayer Off value differs between Core and API!");
 static_assert(static_cast<uint8>(ELedPlayerEnum::One) == static_cast<uint8>(EDSPlayer::One), "Enum mismatch: LedPlayer One value differs between Core and API!");

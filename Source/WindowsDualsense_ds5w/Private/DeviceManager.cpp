@@ -1,6 +1,6 @@
-﻿// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 
 #include "DeviceManager.h"
 #include "API/SonyGamepadProxyHelpers.h"
@@ -248,6 +248,7 @@ namespace GCDevice
 		static const FName RequestDeviceUpdateName(TEXT("Request_Device_Update"));
 		if (Property->Name == RequestDeviceUpdateName)
 		{
+			UE_LOG(LogDualSense, Warning, TEXT("Requesting immediate device scan due to WM_DEVICECHANGE event"));
 			FDeviceRegistry::RequestImmediateDetection();
 			return;
 		}
@@ -266,7 +267,11 @@ namespace GCDevice
 				if (IGamepadTrigger* GamepadTrigger = GetTriggerInterface(ControllerId))
 				{
 					GamepadTrigger->SetResistance(FeedbackProperty->Position, FeedbackProperty->Strengh, static_cast<EDSGamepadHand>(HandMask));
-					GetGamepad(ControllerId)->UpdateOutput();
+					if (auto* Gamepad = GetGamepad(ControllerId))
+					{
+						UE_LOG(LogDualSense, Log, TEXT("TriggerFeedback: ControllerId=%d, Hand=%d, Position=%d, Strength=%d"), ControllerId, HandMask, FeedbackProperty->Position, FeedbackProperty->Strengh);
+						Gamepad->UpdateOutput();
+					}
 				}
 			}
 		}
@@ -291,9 +296,21 @@ namespace GCDevice
 			if (auto* Rumble = Gamepad->GetIGamepadRumbles())
 			{
 				Rumble->SetVibration(LeftRumble, RightRumble);
-			}
+				if (auto* it = VibrationChanges.Find(ControllerId))
+				{
+					if (it->GetData()[0] == LeftRumble && it->GetData()[1] == RightRumble)
+					{
+						return;
+					}
 
-			Gamepad->UpdateOutput();
+					*it = {LeftRumble, RightRumble};
+					Gamepad->UpdateOutput();
+					return;
+				}
+
+				VibrationChanges.Add(ControllerId, {LeftRumble, RightRumble});
+				Gamepad->UpdateOutput();
+			}
 		}
 	}
 
@@ -304,9 +321,8 @@ namespace GCDevice
 			if (auto* Light = Gamepad->GetIGamepadLightbar())
 			{
 				Light->SetLightbar({Color.R, Color.G, Color.B, Color.A});
+				Gamepad->UpdateOutput();
 			}
-
-			Gamepad->UpdateOutput();
 		}
 	}
 

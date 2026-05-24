@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Rafael Valoto. All Rights Reserved.
+// Copyright (c) 2026 Rafael Valoto. All Rights Reserved.
 // Project: GamepadCore - Adapter Example
 // Description: Example implementation of DeviceRegistry Policy for Unreal Engine.
 #pragma once

@@ -1,6 +1,6 @@
-// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 
 #pragma once
 
@@ -9,6 +9,11 @@
 #include "CoreMinimal.h"
 #include "GCore/Interfaces/Segregations/IGamepadHaptics.h"
 #include "ISubmixBufferListener.h"
+
+struct BTPacket
+{
+	std::vector<uint8_t> haptics = {64}; // 3000Hz data
+};
 
 /**
  Class responsible for handling audio submix buffers and preparing audio data for haptic feedback systems.
@@ -20,16 +25,28 @@
  */
 class FAudioHapticsListener : public ISubmixBufferListener
 {
-	/**
-	 Constructor for the FAudioHapticsListener class, initializing the listener with the given input device ID
-	 and audio submix reference.
 
-	 @param InDeviceId The identifier for the input device associated with this haptics listener.
-	 @param InSubmix Pointer to the USoundSubmix object that this listener processes audio data from.
-	 @return An instance of FAudioHapticsListener initialized with the provided input device ID and submix reference.
-	 */
 public:
-	FAudioHapticsListener(int32 InDeviceId, USoundSubmix* InSubmix, bool bIsWireless);
+	/**
+	 Constructor for the FAudioHapticsListener class.
+
+	 Initializes the audio haptics listener instance for processing audio data, enabling haptic feedback generation.
+	 The constructor configures audio settings, initializes Opus encoding for wireless devices, and sets up internal
+	 audio packet queues.
+
+	 @param InDeviceId The device ID associated with this listener.
+	 @param InSubmix A pointer to the USoundSubmix object for audio processing.
+	 @param IsWireless Indicates if the device is wireless. If true, Opus encoding is initialized.
+	 @param Vol The multiplier applied to the audio volume for processing.
+	 @param LowPassUsb The smoothing factor for low-pass filtering for USB devices.
+	 @param LowPassWireless The smoothing factor for low-pass filtering for wireless devices.
+
+	 The constructor clears the audio packet queues and performs Opus encoder setup if the device is wireless.
+	 Opus encoder settings include bitrate, frame duration, complexity, and signal type adjustment, ensuring optimal
+	 audio fidelity and performance for haptic feedback systems.
+	 Log errors will be raised if Opus encoder creation fails.
+	 */
+	FAudioHapticsListener(int32 InDeviceId, USoundSubmix* InSubmix, bool IsWireless, float Vol, float LowPassUsb, float LowPassWireless);
 
 	/**
 	 Determines if the audio processing system is actively rendering audio.
@@ -72,6 +89,56 @@ public:
 	}
 
 	/**
+	 Sets the volume multiplier for audio playback, ensuring the value remains within a valid range.
+
+	 This method adjusts the internal volume multiplier, clamping the value between 0.0 and 1.0 to avoid unintended behavior.
+	 It only updates the multiplier if the provided volume differs from the current value.
+
+	 @param Volume The desired volume multiplier, typically ranging from 0.0 (silent) to 1.0 (full volume).
+	 */
+	void SetVolume(const float Volume)
+	{
+		if (Volume != VolumeMultiplier)
+		{
+			VolumeMultiplier = FMath::Clamp(Volume, 0.0f, 1.0f);
+		}
+	}
+
+	/**
+	 Sets the low-pass alpha value for USB audio processing.
+
+	 This method adjusts the filter's low-pass alpha parameter, ensuring the value is clamped
+	 within a valid range. The low-pass alpha controls the degree of attenuation for higher
+	 frequencies in the audio signal, used for optimizing USB audio rendering.
+
+	 @param LowPass The desired low-pass alpha value, clamped between -1.0 and 1.0.
+	 */
+	void SetLowPassAlphaUSB(float LowPass)
+	{
+		if (LowPass != kLowPassAlphaUSB)
+		{
+			kLowPassAlphaUSB = LowPass;
+		}
+	}
+
+	/**
+	 Updates the low-pass filter alpha value used for wireless haptic feedback processing.
+
+	 This method adjusts the strength of the low-pass filter applied to audio data intended for
+	 wireless haptic feedback systems. The input value is clamped to ensure it remains within
+	 a valid range.
+
+	 @param LowPass The desired low-pass filter alpha value, with valid range between -1.0 and 1.0.
+	 */
+	void SetLowPassAlphaWireless(float LowPass)
+	{
+		if (LowPass != kLowPassAlphaWireless)
+		{
+			kLowPassAlphaWireless = LowPass;
+		}
+	}
+
+	/**
 	Called when a new buffer has been rendered for a given submix
 	@param OwningSubmix	The submix object which has rendered a new buffer
 	@param AudioData		Ptr to the audio buffer
@@ -81,37 +148,49 @@ public:
 	@param AudioClock		Double audio clock value, from Start of audio rendering.
 	*/
 	virtual void OnNewSubmixBuffer(const USoundSubmix* OwningSubmix, float* AudioData, int32 NumSamples, int32 NumChannels, const int32 SampleRate, double AudioClock) override;
-	/**
-	 A thread-safe queue used for storing audio packets to be processed within the audio rendering pipeline.
 
-	 AudioPacketQueue is implemented as a multiple-producer single-consumer (MPSC) queue, allowing audio packets
-	 to be enqueued by multiple threads and dequeued by a single consumer thread. This design is optimized for
-	 high-performance, concurrent audio processing workflows. The queue holds arrays of int8, which represent
-	 raw audio data packets. These packets can be used for real-time processing, such as resampling or formatting
-	 for haptic feedback systems.
-	 */
 private:
-	TQueue<TArray<int8>, EQueueMode::Spsc> AudioPacketQueue;
-	TQueue<std::vector<std::int16_t>, EQueueMode::Spsc> AudioPacketQueueUSB;
 	/**
-	 A buffer used to store audio data that has been resampled for haptic feedback systems.
+	 Scalar value used to adjust the overall volume of audio data.
 
-	 ResampledAudioBuffer is a temporary storage array that holds audio frames after being processed
-	 and converted to a target sample rate using the resampling pipeline. Its size is dynamically
-	 adjusted based on input and output requirements during the resampling operation. This buffer serves
-	 as the intermediate location for resampled audio data, which is subsequently converted into formats
-	 compatible with haptic devices.
+	 VolumeMultiplier is applied to audio buffers during processing to scale their amplitude.
+	 This allows dynamic control over audio output levels, providing flexibility for system-wide
+	 volume adjustment or audio signal modulation.
 	 */
-	TArray<float> ResampledAudioBuffer;
+	float VolumeMultiplier = 0.7f;
 	/**
-	 A unique pointer to an FResampler instance used for processing and resampling audio data within the haptic feedback pipeline.
+	 Constant representing the alpha parameter used in a low-pass filter for USB audio data.
 
-	 ResamplerImpl manages the audio resampling required to match the desired sample rate for haptic feedback systems.
-	 The resampling process ensures that audio data is appropriately converted from its original rate to a lower haptic-compatible rate.
-	 It supports initializing the resampling method, processing the mono audio data, and writing the resampled output for further use.
+	 kLowPassAlphaUSB determines the smoothing factor applied to audio signals during processing.
+	 A higher value results in a smoother, more attenuated signal, while a lower value retains more
+	 of the high-frequency components. This value is specifically chosen to optimize the balance
+	 between noise reduction and signal clarity in USB audio scenarios.
 	 */
-	TUniquePtr<Audio::FResampler> ResamplerImpl;
+	float kLowPassAlphaUSB = 0.97f;
+	/**
+	 A constant parameter used as the smoothing factor for a low-pass filter in wireless audio processing.
 
+	 The value of `kLowPassAlphaWireless` determines the balance between the previous and current signal
+	 in the filtering process, where a higher value prioritizes stability over responsiveness. This parameter
+	 is optimized for wireless audio contexts to maintain consistent output quality in the presence of variable
+	 signal conditions.
+	 */
+	float kLowPassAlphaWireless = 0.9f;
+	/**
+	 A thread-safe single-producer, single-consumer (SPSC) queue used for managing audio packets in the audio processing pipeline.
+
+	 AudioPacketQueue facilitates the transfer of audio packet data between threads in an efficient manner, ensuring
+	 synchronization and avoiding contention. Leveraging the SPSC mode ensures that only one producer thread and one
+	 consumer thread can interact with the queue, making it highly optimized for scenarios involving audio data flow,
+	 especially in real-time environments.
+	 */
+	TQueue<BTPacket, EQueueMode::Spsc> AudioPacketQueue;
+	/**
+	 A thread-safe, single-producer, single-consumer queue used for transferring audio packets between audio processing components in a USB-based workflow.
+
+	 AudioPacketQueueUSB provides a mechanism for buffering and transferring audio data encapsulated as vectors of floating-point samples. The queue ensures efficient and synchronized communication between producer and consumer threads, making it suitable for real-time audio streaming applications that integrate USB-based audio hardware.
+	 */
+	TQueue<std::vector<float>, EQueueMode::Spsc> AudioPacketQueueUSB;
 	/**
 	 A reference to a USoundSubmix instance used within the audio processing pipeline.
 
@@ -146,7 +225,6 @@ private:
 	 left audio channel. It is updated dynamically as the audio processing pipeline executes.
 	 */
 	float LowPassState_Left = 0.0f;
-
 	/**
 	 A floating-point variable used to maintain the internal state of the low-pass filter for the right audio channel.
 

@@ -1,6 +1,6 @@
-// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto/Publisher. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 
 #include "Implementations/Platforms/Windows/WindowsDeviceInfo.h"
 #if PLATFORM_WINDOWS
@@ -9,25 +9,11 @@
 #include "GCore/Types/Structs/Config/GamepadCalibration.h"
 #include "GImplementations/Utils/GamepadSensors.h"
 #include "Helpers/DualSenseLog.h"
-#include "Implementations/Managers/HapticsDeviceRegistry.h"
+#include "Implementations/Adapters/HapticsDeviceRegistry.h"
 #include <filesystem>
 #include <hidsdi.h>
-#include <mmdeviceapi.h>
 #include <propsys.h>
 #include <setupapi.h>
-#include <Functiondiscoverykeys_devpkey.h>
-
-
-// If you already have UE's Windows wrapper includes, keep them.
-// The important bit is: include initguid.h BEFORE devpkey.h in ONE .cpp.
-
-#ifndef INITGUID
-#define INITGUID
-
-#include <initguid.h>
-#include <devpkey.h>
-
-#endif // INITGUID
 // clang-format on
 
 void FWindowsDeviceInfo::Detect(std::vector<FDeviceContext>& Devices)
@@ -134,7 +120,7 @@ void FWindowsDeviceInfo::Read(FDeviceContext* Context)
 		return;
 	}
 
-	if (Context->Handle == INVALID_PLATFORM_HANDLE)
+	if (Context->Handle == INVALID_HANDLE_VALUE)
 	{
 		return;
 	}
@@ -174,7 +160,7 @@ void FWindowsDeviceInfo::Read(FDeviceContext* Context)
 
 void FWindowsDeviceInfo::Write(FDeviceContext* Context)
 {
-	if (Context->Handle == INVALID_PLATFORM_HANDLE)
+	if (Context->Handle == INVALID_HANDLE_VALUE)
 	{
 		return;
 	}
@@ -199,7 +185,7 @@ bool FWindowsDeviceInfo::CreateHandle(FDeviceContext* DeviceContext)
 
 	if (DeviceHandle == INVALID_HANDLE_VALUE)
 	{
-		DeviceContext->Handle = INVALID_PLATFORM_HANDLE;
+		DeviceContext->Handle = INVALID_HANDLE_VALUE;
 		return false;
 	}
 
@@ -225,10 +211,10 @@ void FWindowsDeviceInfo::InvalidateHandle(FDeviceContext* Context)
 		return;
 	}
 
-	if (Context->Handle != INVALID_PLATFORM_HANDLE)
+	if (Context->Handle != INVALID_HANDLE_VALUE)
 	{
 		CloseHandle(Context->Handle);
-		Context->Handle = INVALID_PLATFORM_HANDLE;
+		Context->Handle = INVALID_HANDLE_VALUE;
 		Context->IsConnected = false;
 		Context->Path.clear();
 
@@ -279,7 +265,7 @@ void FWindowsDeviceInfo::ProcessAudioHaptic(FDeviceContext* Context)
 		return;
 	}
 
-	if (Context->Handle == INVALID_PLATFORM_HANDLE)
+	if (Context->Handle == INVALID_HANDLE_VALUE)
 	{
 		return;
 	}

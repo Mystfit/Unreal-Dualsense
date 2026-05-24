@@ -1,36 +1,47 @@
-﻿// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 #pragma once
+
+#if PLATFORM_WINDOWS
+#include "GCore/Types/Structs/Context/DeviceContext.h"
 #include "Helpers/DualSenseLog.h"
-#include <SetupAPI.h>
-#include <audioclient.h>
+
+// clang-format off
+#ifndef INITGUID
+#define INITGUID
+#endif
+
+#include "Windows/AllowWindowsPlatformTypes.h"
+#include <Windows.h>
+#include <initguid.h>
+#include <devpkey.h>
+#include "Windows/HideWindowsPlatformTypes.h"
+
 #include <cstdint>
 #include <cstring>
-#include <devpkey.h>
-#include <hidsdi.h>
 #include <limits>
-#include <mmdeviceapi.h>
 #include <mutex>
-#include <propsys.h>
 #include <string>
 #include <vector>
 
-// clang-format off
-#if PLATFORM_WINDOWS
 #include "Windows/AllowWindowsPlatformTypes.h"
-#include <Windows.h>
+#include <SetupAPI.h>
+#include <hidsdi.h>
+#include <mmdeviceapi.h>
+#include <audioclient.h>
+#include <propsys.h>
 #include <Functiondiscoverykeys_devpkey.h>
 #include "Windows/HideWindowsPlatformTypes.h"
-#endif
 // clang-format on
 
 #pragma comment(lib, "Propsys.lib")
+#pragma comment(lib, "SetupAPI.lib")
 
-struct WasApiPolicy
+struct FWasApiPolicy
 {
 public:
-	using Policy = WasApiPolicy;
+	using Policy = FWasApiPolicy;
 
 	using DevicePathType = std::string;
 	using AudioDeviceType = IAudioClient*;
@@ -41,7 +52,7 @@ public:
 	using AudioRingBufferType = std::vector<float>;
 	using AudioFrameCountType = int;
 
-	int NumChannels = 2;
+	int NumChannels = 4;
 	int SampleRate = 48000;
 	bool bInitialized = false;
 	bool bHasDeviceId = false;
@@ -54,18 +65,19 @@ public:
 	AudioDeviceIdType DeviceId;
 	AudioRingBufferType RingBuffer;
 
-#if PLATFORM_WINDOWS
 	IMMDeviceEnumerator* DeviceEnumerator = nullptr;
 	IMMDevice* DeviceEndpoint = nullptr;
 	IAudioClient* AudioClient = nullptr;
 	IAudioRenderClient* AudioRenderClient = nullptr;
 	UINT32 WasapiBufferFrameCount = 0;
-#endif
 
 	std::mutex WriteMutex;
 
-	WasApiPolicy() = default;
-	~WasApiPolicy()
+	FWasApiPolicy()
+	{
+	}
+
+	~FWasApiPolicy()
 	{
 		Close();
 	}
@@ -102,55 +114,57 @@ public:
 
 	void Close()
 	{
-		std::lock_guard<std::mutex> Lock(WriteMutex);
-
-#if PLATFORM_WINDOWS
-		if (AudioClient && bAudioStarted)
 		{
-			AudioClient->Stop();
+			std::lock_guard<std::mutex> Lock(WriteMutex);
+			if (AudioClient && bAudioStarted)
+			{
+				if (const HRESULT hr = AudioClient->Stop(); FAILED(hr))
+				{
+					UE_LOG(LogDualSense, Warning, TEXT("Close: Failed to stop WASAPI audio client (0x%08X)"), hr);
+				}
+				bAudioStarted = false;
+			}
+
+			if (AudioRenderClient)
+			{
+				AudioRenderClient->Release();
+				AudioRenderClient = nullptr;
+			}
+
+			if (AudioClient)
+			{
+				AudioClient->Release();
+				AudioClient = nullptr;
+			}
+
+			if (DeviceEndpoint)
+			{
+				DeviceEndpoint->Release();
+				DeviceEndpoint = nullptr;
+			}
+
+			if (DeviceEnumerator)
+			{
+				DeviceEnumerator->Release();
+				DeviceEnumerator = nullptr;
+			}
+
+			if (bComInitialized)
+			{
+				CoUninitialize();
+				bComInitialized = false;
+			}
+
+			WasapiBufferFrameCount = 0;
+			RingBuffer.clear();
+			DeviceId.clear();
+			DevicePath.clear();
+			bInitialized = false;
+			bHasDeviceId = false;
+			bRingBufferInitialized = false;
+			bFoundDevice = false;
 			bAudioStarted = false;
 		}
-
-		if (AudioRenderClient)
-		{
-			AudioRenderClient->Release();
-			AudioRenderClient = nullptr;
-		}
-
-		if (AudioClient)
-		{
-			AudioClient->Release();
-			AudioClient = nullptr;
-		}
-
-		if (DeviceEndpoint)
-		{
-			DeviceEndpoint->Release();
-			DeviceEndpoint = nullptr;
-		}
-
-		if (DeviceEnumerator)
-		{
-			DeviceEnumerator->Release();
-			DeviceEnumerator = nullptr;
-		}
-
-		if (bComInitialized)
-		{
-			CoUninitialize();
-			bComInitialized = false;
-		}
-#endif
-
-		WasapiBufferFrameCount = 0;
-		RingBuffer.clear();
-		DeviceId.clear();
-		DevicePath.clear();
-		bInitialized = false;
-		bHasDeviceId = false;
-		bRingBufferInitialized = false;
-		bFoundDevice = false;
-		bAudioStarted = false;
 	}
 
 	[[nodiscard]] bool IsValid() const
@@ -175,48 +189,46 @@ public:
 		}
 	}
 
-	bool WriteHapticData(const std::vector<std::int16_t>& InterleavedData)
+	bool WriteHapticData(const std::vector<float>& InterleavedData)
 	{
-		std::lock_guard<std::mutex> Lock(WriteMutex);
-
-		if (!IsValid() || InterleavedData.empty() || NumChannels < 2)
+		if (InterleavedData.size() % NumChannels != 0)
 		{
-			return false;
+			UE_LOG(LogDualSense, Warning, TEXT("WriteHapticData: Interleaved data size is not a multiple of the number of channels."));
+			return true;
 		}
 
-		const AudioFrameCountType framesToWrite = static_cast<AudioFrameCountType>(InterleavedData.size() / 2);
-
+		const AudioFrameCountType framesToWrite = static_cast<AudioFrameCountType>(InterleavedData.size() / NumChannels);
 		if (framesToWrite == 0)
+		{
+			UE_LOG(LogDualSense, Log, TEXT("WriteHapticData: No frames to write"));
+			return true;
+		}
+
+		if (RingBuffer.size() < InterleavedData.size())
+		{
+			RingBuffer.resize(InterleavedData.size() * NumChannels);
+		}
+
+		auto* pOutputBuffer = RingBuffer.data();
+		for (int i = 0; i < framesToWrite; ++i)
+		{
+			const AudioFrameCountType baseIndex = i * NumChannels;
+			// pOutputBuffer[baseIndex] = InterleavedData[baseIndex];
+			// pOutputBuffer[baseIndex + 1] = InterleavedData[baseIndex + 1];
+			pOutputBuffer[baseIndex + 2] = InterleavedData[baseIndex + 2];
+			pOutputBuffer[baseIndex + 3] = InterleavedData[baseIndex + 3];
+		}
+
+		if (RingBuffer.size() < InterleavedData.size())
 		{
 			return true;
 		}
 
-		RingBuffer.resize(static_cast<size_t>(framesToWrite) * static_cast<size_t>(NumChannels));
-		auto* pOutputBuffer = RingBuffer.data();
-		constexpr float kNormalization = 1.0f / 32768.0f;
-		for (AudioFrameCountType i = 0; i < framesToWrite; i++)
 		{
-			const float LeftFloat = static_cast<float>(InterleavedData[static_cast<size_t>(i) * 2]) * kNormalization;
-			const float RightFloat = static_cast<float>(InterleavedData[(static_cast<size_t>(i) * 2) + 1]) * kNormalization;
-			const AudioFrameCountType baseIndex = i * NumChannels;
-
-			if (NumChannels >= 4)
-			{
-				pOutputBuffer[baseIndex + 0] = 0.0f;
-				pOutputBuffer[baseIndex + 1] = 0.0f;
-				pOutputBuffer[baseIndex + 2] = LeftFloat;
-				pOutputBuffer[baseIndex + 3] = RightFloat;
-			}
-			else
-			{
-				pOutputBuffer[baseIndex + 0] = LeftFloat;
-				pOutputBuffer[baseIndex + 1] = RightFloat;
-			}
+			std::lock_guard<std::mutex> Lock(WriteMutex);
+			const bool bResult = WriteToWasapiEndpoint(RingBuffer.data(), framesToWrite);
+			return bResult;
 		}
-
-		const bool bResult = WriteToWasapiEndpoint(RingBuffer.data(), framesToWrite);
-		RingBuffer.clear();
-		return bResult;
 	}
 
 	bool InitializeAudioContainer(const ContextType* Context)
@@ -232,14 +244,13 @@ public:
 			return false;
 		}
 
-		const std::string TargetContainerId = get_container_id(DevicePath);
+		const std::string TargetContainerId = GetContainerId(DevicePath);
 		if (TargetContainerId.empty())
 		{
 			UE_LOG(LogDualSense, Warning, TEXT("InitializeAudioContainer: Failed to get HID container id."));
 			return false;
 		}
 
-#if PLATFORM_WINDOWS
 		HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 		const bool bTempComInitialized = SUCCEEDED(hr);
 		if (FAILED(hr) && hr != RPC_E_CHANGED_MODE)
@@ -318,12 +329,9 @@ public:
 
 		bFoundDevice = true;
 		return InitializeWithDeviceId(&FoundEndpointId, SampleRate, NumChannels);
-#else
-		return false;
-#endif
 	}
 
-	std::string get_container_id(const std::string& InDevicePath)
+	std::string GetContainerId(const std::string& InDevicePath)
 	{
 		std::wstring WPath(InDevicePath.begin(), InDevicePath.end());
 		GUID HidGuid;
@@ -410,7 +418,6 @@ public:
 private:
 	bool InitializeWasapiClient()
 	{
-#if PLATFORM_WINDOWS
 		if (!bHasDeviceId || DeviceId.empty())
 		{
 			return false;
@@ -492,14 +499,10 @@ private:
 
 		bAudioStarted = true;
 		return true;
-#else
-		return false;
-#endif
 	}
 
 	bool WriteToWasapiEndpoint(const float* InAudioBuffer, AudioFrameCountType InFrameCount)
 	{
-#if PLATFORM_WINDOWS
 		// Write-only render path. No capture/readback is used by this policy.
 		if (!InAudioBuffer || InFrameCount <= 0 || !AudioClient || !AudioRenderClient || !bAudioStarted || NumChannels <= 0)
 		{
@@ -533,8 +536,49 @@ private:
 
 		hr = AudioRenderClient->ReleaseBuffer(FramesToWrite, 0);
 		return SUCCEEDED(hr);
-#else
-		return false;
-#endif
 	}
 };
+
+#else
+#include "GCore/Types/Structs/Context/DeviceContext.h"
+#include <vector>
+
+class FWasApiPolicy
+{
+public:
+	using Policy = FWasApiPolicy;
+
+	using DevicePathType = std::string;
+	using AudioDeviceType = FWasApiPolicy;
+	using AudioDeviceIdType = std::string;
+	using ContextType = FDeviceContext;
+
+	// Send-only path: Unreal already provides samples from submix; this policy only writes to pcm audio device channel output.
+	using AudioRingBufferType = std::vector<float>;
+	using AudioFrameCountType = int;
+
+	int NumChannels = 2;
+	int SampleRate = 48000;
+	bool bInitialized = false;
+	bool bHasDeviceId = false;
+	bool bRingBufferInitialized = false;
+	bool bFoundDevice = false;
+	bool bComInitialized = false;
+	bool bAudioStarted = false;
+
+	DevicePathType DevicePath;
+	AudioDeviceIdType DeviceId;
+	AudioRingBufferType RingBuffer;
+
+	void Close() {}
+	[[nodiscard]] bool IsValid() const { return false; }
+	bool InitializeWithDeviceId(const AudioDeviceIdType& InDeviceId) { return false; }
+	bool InitializeWithDeviceId(const AudioDeviceIdType* InDeviceId, int InSampleRate = 48000, int InNumChannels = 4) { return false; }
+	void RegisterAudioDevice(const DevicePathType& InDevicePath, const AudioDeviceIdType* InDeviceId = nullptr) {}
+	void UnregisterAudioDevice(const DevicePathType& InDevicePath) {}
+	bool WriteHapticData(const std::vector<std::int16_t>& InterleavedData) { return false; }
+	bool WriteHapticData(const std::vector<float>& HapticsData, const std::vector<float>& AudioData) { return false; }
+	bool InitializeAudioContainer(const ContextType* Context) { return false; }
+};
+
+#endif

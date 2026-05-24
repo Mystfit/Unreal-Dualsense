@@ -1,21 +1,30 @@
-// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 
 #include "WindowsDualsense_ds5w/Public/WindowsDualsense_ds5w.h"
-#include "API/SonyGamepadProxyHelpers.h"
 #include "GCore/Interfaces/IPlatformHardware.h"
-#include "Helpers/DualSenseLog.h"
 #include "Implementations/Adapters/DeviceRegistry.h"
-#include "Implementations/Platforms/Commons/LinuxHardwarePolicy.h"
-#include "Implementations/Platforms/Windows/WindowsHardwarePolicy.h"
 
-#if PLATFORM_LINUX || PLATFORM_MAC
+// clang-format off
+#if PLATFORM_WINDOWS
+#include "Implementations/Platforms/Windows/WindowsDeviceInfo.h"
+#include "Implementations/Platforms/Windows/Policies/WindowsHardwarePolicy.h"
+#include "Implementations/Platforms/Windows/WasApiRegistry.h"
+
+#elif PLATFORM_LINUX
+#include "Implementations/Platforms/Linux/Policies/LinuxHardwarePolicy.h"
+#include "Implementations/Platforms/Linux/LinuxDeviceInfo.h"
 #include "Framework/Application/SlateApplication.h"
 #include "SDL.h"
 #include "Subsystems/SonyInputProcessor.h"
 #endif
+
+// clang-format on
+
+#include "API/SonyGamepadProxyHelpers.h"
 #include "DeviceManager.h"
+#include "Helpers/DualSenseLog.h"
 #include "InputCoreTypes.h"
 #include "Misc/Paths.h"
 
@@ -31,10 +40,14 @@ void FWindowsDualsense_ds5wModule::StartupModule()
 	std::unique_ptr<IPlatformHardware> WindowsInstance = std::make_unique<FWindowsPlatform::FWindowsHardware>();
 	IPlatformHardware::SetInstance(std::move(WindowsInstance));
 
+	// Initialize Audio Platform Interface
+	std::unique_ptr<IAudioDevice> WasApiAudioDevice = std::make_unique<FWasApiRegistry>();
+	IAudioDevice::SetInstance(std::move(WasApiAudioDevice));
+
 	// Initialize FDeviceRegistry
 	FDeviceRegistry::Initialize();
 
-#elif PLATFORM_LINUX || PLATFORM_MAC
+#elif PLATFORM_LINUX
 	if (SDL_InitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0)
 	{
 		UE_LOG(LogDualSense, Error, TEXT("Failed to initialize subsystems of SDL: %s"), UTF8_TO_TCHAR(SDL_GetError()));
@@ -56,7 +69,7 @@ void FWindowsDualsense_ds5wModule::StartupModule()
 
 void FWindowsDualsense_ds5wModule::ShutdownModule()
 {
-#if PLATFORM_LINUX || PLATFORM_MAC
+#if PLATFORM_LINUX
 	SDL_Quit();
 
 	if (FSlateApplication::IsInitialized())

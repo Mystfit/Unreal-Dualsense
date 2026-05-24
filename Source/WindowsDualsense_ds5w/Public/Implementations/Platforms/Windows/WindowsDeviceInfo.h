@@ -1,6 +1,6 @@
-// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 #pragma once
 #if PLATFORM_WINDOWS
 
@@ -104,13 +104,26 @@ public:
 	 * @brief Invalidates the handle of the specified HID device context and updates its connection status.
 	 *
 	 * This method ensures that the handle associated with the provided device context is properly invalidated.
-	 * If the handle is valid, it will be closed and set to INVALID_PLATFORM_HANDLE. The connection status of the
+	 * If the handle is valid, it will be closed and set to INVALID_HANDLE_VALUE. The connection status of the
 	 * device context will also be updated to indicate that the device is no longer connected.
 	 *
 	 * @param Context Pointer to the device context representing the HID device whose handle is to be invalidated.
 	 *        If the provided context is null, the method will return without performing any operations.
 	 */
 	static void InvalidateHandle(FDeviceContext* Context);
+	/**
+	 * @brief Processes audio haptic feedback for the given device context.
+	 *
+	 * This method is responsible for handling audio-based haptic feedback by writing
+	 * audio data from the device context to the appropriate output handle.
+	 * It validates the context state, ensures proper connection type, and writes
+	 * data using system APIs to enable device-specific functionality.
+	 *
+	 * @param Context Pointer to the device context containing audio buffer, platform handle,
+	 *                and connection details. Must not be null and must represent
+	 *                a valid Bluetooth-connected device.
+	 */
+	static void ProcessAudioHaptic(FDeviceContext* Context);
 	/**
 	 * @brief Sends a single ping operation to check the state of the specified handle.
 	 *
@@ -136,47 +149,6 @@ public:
 	 * @return An enumeration value of type EPollResult indicating the result of the polling operation.
 	 */
 	static EPollResult PollTick(HANDLE Handle, unsigned char* Buffer, std::int32_t Length, DWORD& OutBytesRead);
-	/**
-	 * @brief Processes audio haptic feedback for the given device context.
-	 *
-	 * This method is responsible for handling audio-based haptic feedback by writing
-	 * audio data from the device context to the appropriate output handle.
-	 * It validates the context state, ensures proper connection type, and writes
-	 * data using system APIs to enable device-specific functionality.
-	 *
-	 * @param Context Pointer to the device context containing audio buffer, platform handle,
-	 *                and connection details. Must not be null and must represent
-	 *                a valid Bluetooth-connected device.
-	 */
-	static void ProcessAudioHaptic(FDeviceContext* Context);
-	/**
-	 * @brief Finds and returns the WASAPI audio device that belongs to the same physical
-	 *        device as the given HID context.
-	 *
-	 * Internally calls GetContainerId() on the HID path and iterates all active render
-	 * endpoints, calling GetAudioContainerId() on each one.  When both GUIDs match the
-	 * returned FAudioDeviceInfo is populated with the WASAPI Id and a friendly name;
-	 * on failure an empty FAudioDeviceInfo is returned.
-	 *
-	 * @param Context Pointer to the device context (must have a valid Path).
-	 * @return FAudioDeviceInfo with Id/FriendlyName if found, empty otherwise.
-	 */
-	static std::string InitializeAudioDevice(FDeviceContext* Context);
-	/**
-	 * @brief Gets the container ID for a HID device path.
-	 *
-	 * @param DevicePath The path of the HID device.
-	 * @return The container ID as a string, or an empty string if not found.
-	 */
-	static std::string GetContainerId(const std::string& DevicePath);
-	/**
-	 * @brief Gets the container ID for a WASAPI audio device ID.
-	 *
-	 * @param AudioDeviceId The WASAPI device ID.
-	 * @return The container ID as a string, or an empty string if not found.
-	 */
-	static std::string GetAudioContainerId(const wchar_t* AudioDeviceId);
-
 	/**
 	 * @brief Determines whether the given error code should be treated as a device disconnection.
 	 *

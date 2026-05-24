@@ -1,8 +1,8 @@
-// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 
-#include "Implementations/Platforms/Commons/CommonsDeviceInfo.h"
+#include "Implementations/Platforms/Linux/LinuxDeviceInfo.h"
 
 #ifdef __unix__
 #include "API/SonyGamepadProxyHelpers.h"
@@ -21,7 +21,7 @@ static const std::uint16_t DUALSHOCK4_PID_V2 = 0x09CC;
 static const std::uint16_t DUALSENSE_PID = 0x0CE6;
 static const std::uint16_t DUALSENSE_EDGE_PID = 0x0DF2;
 
-void FCommonsDeviceInfo::Read(FDeviceContext* Context)
+void FLinuxDeviceInfo::Read(FDeviceContext* Context)
 {
 	if (!Context || !Context->Handle)
 	{
@@ -56,7 +56,7 @@ void FCommonsDeviceInfo::Read(FDeviceContext* Context)
 	}
 }
 
-void FCommonsDeviceInfo::ProcessAudioHaptic(FDeviceContext* Context)
+void FLinuxDeviceInfo::ProcessAudioHaptic(FDeviceContext* Context)
 {
 	if (!Context || !Context->Handle)
 	{
@@ -72,7 +72,7 @@ void FCommonsDeviceInfo::ProcessAudioHaptic(FDeviceContext* Context)
 	}
 }
 
-void FCommonsDeviceInfo::ConfigureFeatures(FDeviceContext* Context)
+void FLinuxDeviceInfo::ConfigureFeatures(FDeviceContext* Context)
 {
 	SDL_hid_device* DeviceHandle = static_cast<SDL_hid_device*>(Context->Handle);
 
@@ -128,7 +128,7 @@ void FCommonsDeviceInfo::ConfigureFeatures(FDeviceContext* Context)
 	return;
 }
 
-void FCommonsDeviceInfo::Write(FDeviceContext* Context)
+void FLinuxDeviceInfo::Write(FDeviceContext* Context)
 {
 	if (!Context || !Context->Handle)
 	{
@@ -147,7 +147,7 @@ void FCommonsDeviceInfo::Write(FDeviceContext* Context)
 	}
 }
 
-void FCommonsDeviceInfo::Detect(std::vector<FDeviceContext>& Devices)
+void FLinuxDeviceInfo::Detect(std::vector<FDeviceContext>& Devices)
 {
 	Devices.clear();
 
@@ -201,7 +201,7 @@ void FCommonsDeviceInfo::Detect(std::vector<FDeviceContext>& Devices)
 	SDL_hid_free_enumeration(Devs);
 }
 
-bool FCommonsDeviceInfo::CreateHandle(FDeviceContext* Context)
+bool FLinuxDeviceInfo::CreateHandle(FDeviceContext* Context)
 {
 	if (!Context)
 	{
@@ -223,7 +223,7 @@ bool FCommonsDeviceInfo::CreateHandle(FDeviceContext* Context)
 	return true;
 }
 
-void FCommonsDeviceInfo::InvalidateHandle(FDeviceContext* Context)
+void FLinuxDeviceInfo::InvalidateHandle(FDeviceContext* Context)
 {
 	if (Context)
 	{
@@ -244,7 +244,7 @@ void FCommonsDeviceInfo::InvalidateHandle(FDeviceContext* Context)
 		std::memset(Context->BufferHapitcs, 0, 142);
 	}
 }
-void FCommonsDeviceInfo::InitializeAudioDevice(FDeviceContext* Context)
+void FLinuxDeviceInfo::InitializeAudioDevice(FDeviceContext* Context)
 {
 	if (!Context)
 	{

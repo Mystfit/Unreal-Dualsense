@@ -1,6 +1,6 @@
-// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 
 #pragma once
 
@@ -8,20 +8,20 @@
 #include <memory>
 #include <vector>
 
-class FCommonsDeviceInfo
+class FLinuxDeviceInfo
 {
 	/**
-	 * Virtual destructor for the FCommonsDeviceInfo class.
+	 * Virtual destructor for the FLinuxDeviceInfo class.
 	 *
 	 * This destructor ensures proper cleanup of resources associated with
-	 * the FCommonsDeviceInfo class when the object is destroyed. It overrides
+	 * the FLinuxDeviceInfo class when the object is destroyed. It overrides
 	 * the destructor of the IPlatformHardwareInfoInterface base class.
 	 *
 	 * The destructor is declared as virtual to allow correct destruction
 	 * of derived class objects through base class pointers.
 	 */
 public:
-	~FCommonsDeviceInfo()
+	~FLinuxDeviceInfo()
 	{
 	}
 
@@ -56,7 +56,7 @@ public:
 	 *
 	 * This method retrieves and processes the relevant information about
 	 * the device through the given device context. It is a member function
-	 * of the FCommonsDeviceInfo class and is intended to handle device-specific
+	 * of the FLinuxDeviceInfo class and is intended to handle device-specific
 	 * data retrieval operations.
 	 *
 	 * @param Context A pointer to the FDeviceContext object, which provides
@@ -87,7 +87,7 @@ public:
 	 */
 	static void Detect(std::vector<FDeviceContext>& Devices);
 	/**
-	 * Creates a handle for the FCommonsDeviceInfo class using the provided device context.
+	 * Creates a handle for the FLinuxDeviceInfo class using the provided device context.
 	 *
 	 * This method initializes and configures a handle specific to the device context
 	 * supplied as an argument. It is expected to ensure that the device context is

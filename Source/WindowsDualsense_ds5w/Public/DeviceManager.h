@@ -1,12 +1,11 @@
-﻿// Copyright (c) 2025 Rafael Valoto/Publisher. All rights reserved.
+// Copyright (c) 2026 Rafael Valoto. All rights reserved.
 // Created for: WindowsDualsense_ds5w - Plugin to support DualSense controller on Windows.
-// Planned Release Year: 2025
+// Planned Release Year: 2026
 
 #pragma once
 
 #include "Algorithms/MadgwickAhrs.h"
 #include "CoreMinimal.h"
-#include "GCore/Interfaces/Segregations/IGamepadBase.h"
 #include "GCore/Types/Structs/Context/DeviceContext.h"
 #include "GenericPlatform/IInputInterface.h"
 #include "IHapticDevice.h"
@@ -208,6 +207,15 @@ namespace GCDevice
 		 * connected input device.
 		 */
 		mutable TMap<FInputDeviceId, TSharedPtr<FMadgwickAhrs>> FilterSensors;
+		/**
+		 * Stores and manages vibration changes for input devices, where each input device is identified
+		 * by its unique ID. The map associates device IDs with an array of float values representing
+		 * the vibration intensities for corresponding motors or feedback channels.
+		 *
+		 * This member is mutable to allow vibration states to be updated even in contexts where
+		 * the containing instance is considered constant.
+		 */
+		mutable TMap<int32, TArray<std::uint8_t>> VibrationChanges;
 
 		/**
 		 * Represents a mapping between touch IDs and their respective states. The key is an integer
